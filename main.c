@@ -67,9 +67,11 @@ void cleanup_path(char *path) {
     return;
   }
   size_t len = strlen(path);
+
   // ! for windows path
-  // ? On Windows, a user might pass a path like test_folder\ (with a
-  // backslash). To be 100% "ready for everything," we should check for both.
+  // On Windows, a user might pass a path like test_folder\ (with a backslash).
+  // To be 100% "ready for everything," we should check for both.
+
   if (len > 0 && (path[len - 1] == '/' || path[len - 1] == '\\')) {
     path[len - 1] = '\0';
   }
