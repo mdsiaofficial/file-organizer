@@ -43,9 +43,12 @@ char *find_folder(const char *ext) {
 int create_dir(const char *path) {
   struct stat st = {0};
   if (stat(path, &st) == -1) {
+
 #ifdef _WIN32
+    // ! for windows os
     return mkdir(path);
 #else
+    // ! for linux os / mac os
     return mkdir(path, 0755);
 #endif
   }
@@ -64,7 +67,10 @@ void cleanup_path(char *path) {
     return;
   }
   size_t len = strlen(path);
-  if (len > 0 && path[len - 1] == '/') {
+  // ! for windows path
+  // ? On Windows, a user might pass a path like test_folder\ (with a
+  // backslash). To be 100% "ready for everything," we should check for both.
+  if (len > 0 && (path[len - 1] == '/' || path[len - 1] == '\\')) {
     path[len - 1] = '\0';
   }
 }
