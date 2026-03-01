@@ -43,7 +43,11 @@ char *find_folder(const char *ext) {
 int create_dir(const char *path) {
   struct stat st = {0};
   if (stat(path, &st) == -1) {
+#ifdef _WIN32
+    return mkdir(path);
+#else
     return mkdir(path, 0755);
+#endif
   }
   return 0;
 }
