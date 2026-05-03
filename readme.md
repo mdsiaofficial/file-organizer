@@ -1,4 +1,4 @@
-# file organizer
+# folderly - file organizer
 
 ## description
 

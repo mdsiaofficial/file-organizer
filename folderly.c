@@ -321,10 +321,10 @@ static int build_path(char *buffer, size_t buffer_size, const char *left,
   }
 
   int written = snprintf(buffer, buffer_size, "%s/%s", left, right);
-  
+
   // ! debug log to verify path building and buffer usage
-  printf("Debug: build_path('%s', '%s') -> '%s' | buffer_size: %s (written: %d)\n", left, right, buffer, buffer_size, written);
-  
+  // printf("---Debug: build_path('%s', '%s') -> '%s' (written: %d)\n", left, right, buffer, written);
+
   if (written < 0 || (size_t)written >= buffer_size)
   {
     return -1;
@@ -563,6 +563,7 @@ int organize_directory(const char *target_dir)
 // Uses the provided directory path or the current directory by default.
 int main(int argc, char *argv[])
 {
+  printf("Folderly - Simple File Organizer\n- %d", argc);
   const char *target = (argc > 1) ? argv[1] : ".";
 
   printf("Organizing files in: %s\n\n", target);
