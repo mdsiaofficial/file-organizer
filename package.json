@@ -1,5 +1,5 @@
 {
-  "name": "folderly",
+  "name": "folderizer",
   "version": "0.1.0",
   "description": "A simple file organizer CLI for sorting files into category folders.",
   "main": "folderly.js",
