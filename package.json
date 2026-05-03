@@ -4,7 +4,7 @@
   "description": "A simple file organizer CLI for sorting files into category folders.",
   "main": "folderly.js",
   "bin": {
-    "folderly": "./folderly.js"
+    "folderly": "folderly.js"
   },
   "files": [
     "folderly.js"
