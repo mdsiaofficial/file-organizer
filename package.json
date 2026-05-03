@@ -1,0 +1,31 @@
+{
+  "name": "folderly",
+  "version": "0.1.0",
+  "description": "A simple file organizer CLI for sorting files into category folders.",
+  "main": "folderly.js",
+  "bin": {
+    "folderly": "./folderly.js"
+  },
+  "files": [
+    "folderly.js"
+  ],
+  "scripts": {
+    "start": "node folderly.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdsiaofficial/folderly.git"
+  },
+  "keywords": [
+    "cli",
+    "file-organizer",
+    "folderly"
+  ],
+  "author": "Md Shoriful Islam Ashiq",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mdsiaofficial/folderly/issues"
+  },
+  "homepage": "https://github.com/mdsiaofficial/folderly#readme"
+}
