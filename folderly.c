@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -457,9 +458,82 @@ static int ensure_folder_once(const char *folder, const char *folder_path,
   return 0;
 }
 
+static int is_valid_category(const char *category)
+{
+  if (strcasecmp(category, "others") == 0)
+  {
+    return 1;
+  }
+  for (int i = 0; rules[i].ext != NULL; i++)
+  {
+    if (strcasecmp(rules[i].folder, category) == 0)
+    {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static void print_help()
+{
+  printf("folderly — Simple File Organizer (CLI)\n\n");
+  printf("Usage:\n");
+  printf("  folderly [options] [target_directory]\n\n");
+  printf("Arguments:\n");
+  printf("  target_directory    The directory to organize (defaults to current directory \".\")\n\n");
+  printf("Options:\n");
+  printf("  --help, -h          Show this help message\n");
+  printf("  --<category>        Only organize files of this category (e.g., --code, --music)\n\n");
+  printf("Valid Categories:\n");
+
+  const char *unique_categories[100];
+  int count = 0;
+  unique_categories[count++] = "others";
+
+  for (int i = 0; rules[i].ext != NULL; i++)
+  {
+    int found = 0;
+    for (int j = 0; j < count; j++)
+    {
+      if (strcasecmp(rules[i].folder, unique_categories[j]) == 0)
+      {
+        found = 1;
+        break;
+      }
+    }
+    if (!found && count < 100)
+    {
+      unique_categories[count++] = rules[i].folder;
+    }
+  }
+
+  for (int i = 0; i < count - 1; i++)
+  {
+    for (int j = i + 1; j < count; j++)
+    {
+      if (strcasecmp(unique_categories[i], unique_categories[j]) > 0)
+      {
+        const char *temp = unique_categories[i];
+        unique_categories[i] = unique_categories[j];
+        unique_categories[j] = temp;
+      }
+    }
+  }
+
+  for (int i = 0; i < count; i += 5)
+  {
+    printf("  ");
+    for (int j = i; j < i + 5 && j < count; j++)
+    {
+      printf("%s%s", unique_categories[j], (j < i + 4 && j < count - 1) ? ", " : "");
+    }
+    printf("\n");
+  }
+}
+
 // Scans the target directory and moves each regular file into a category.
 // The function keeps subdirectories untouched.
-int organize_directory(const char *target_dir)
+int organize_directory(const char *target_dir, const char **allowed_categories, int allowed_count)
 {
   if (!target_dir)
   {
@@ -470,7 +544,14 @@ int organize_directory(const char *target_dir)
   DIR *dir = opendir(target_dir);
   if (!dir)
   {
-    perror("Failed to open directory");
+    if (errno == ENOENT)
+    {
+      fprintf(stderr, "Error: The target directory '%s' does not exist.\n", target_dir);
+    }
+    else
+    {
+      perror("Failed to open directory");
+    }
     return -1;
   }
 
@@ -515,6 +596,23 @@ int organize_directory(const char *target_dir)
     // Resolve the folder name from the file extension.
     const char *ext = get_extension(entry->d_name);
     const char *folder = find_folder(ext);
+
+    if (allowed_count > 0)
+    {
+      int allowed = 0;
+      for (int i = 0; i < allowed_count; i++)
+      {
+        if (strcasecmp(folder, allowed_categories[i]) == 0)
+        {
+          allowed = 1;
+          break;
+        }
+      }
+      if (!allowed)
+      {
+        continue;
+      }
+    }
 
     // Prepare the destination folder path.
     char dest_folder[PATH_MAX];
@@ -563,12 +661,80 @@ int organize_directory(const char *target_dir)
 // Uses the provided directory path or the current directory by default.
 int main(int argc, char *argv[])
 {
-  printf("Folderly - Simple File Organizer\n- %d", argc);
-  const char *target = (argc > 1) ? argv[1] : ".";
+  for (int i = 1; i < argc; i++)
+  {
+    if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0)
+    {
+      print_help();
+      return EXIT_SUCCESS;
+    }
+  }
 
-  printf("Organizing files in: %s\n\n", target);
+  const char *target = NULL;
+  const char *allowed_categories[100];
+  int allowed_count = 0;
 
-  if (organize_directory(target) != 0)
+  for (int i = 1; i < argc; i++)
+  {
+    if (strncmp(argv[i], "--", 2) == 0)
+    {
+      allowed_categories[allowed_count++] = argv[i] + 2;
+    }
+    else if (strncmp(argv[i], "-", 1) == 0)
+    {
+      allowed_categories[allowed_count++] = argv[i] + 1;
+    }
+    else
+    {
+      if (!target)
+      {
+        target = argv[i];
+      }
+    }
+  }
+
+  target = target ? target : ".";
+
+  if (allowed_count > 0)
+  {
+    int invalid = 0;
+    for (int i = 0; i < allowed_count; i++)
+    {
+      if (!is_valid_category(allowed_categories[i]))
+      {
+        if (invalid == 0)
+        {
+          fprintf(stderr, "Error: Unknown category flag(s): --%s", allowed_categories[i]);
+        }
+        else
+        {
+          fprintf(stderr, ", --%s", allowed_categories[i]);
+        }
+        invalid++;
+      }
+    }
+    if (invalid > 0)
+    {
+      fprintf(stderr, "\nRun 'folderly --help' to see valid categories.\n");
+      return EXIT_FAILURE;
+    }
+  }
+
+  printf("Folderly - Simple File Organizer\n");
+  printf("Organizing files in: %s\n", target);
+
+  if (allowed_count > 0)
+  {
+    printf("Filtering for categories: ");
+    for (int i = 0; i < allowed_count; i++)
+    {
+      printf("%s%s", allowed_categories[i], (i < allowed_count - 1) ? ", " : "");
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  if (organize_directory(target, allowed_categories, allowed_count) != 0)
   {
     return EXIT_FAILURE;
   }

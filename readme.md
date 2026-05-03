@@ -11,9 +11,12 @@
 ## Features
 
 - Classifies files by extension into named folders (documents, images, music, videos, code, archives, etc.)
-- Uses safe filesystem operations (Node's fs/promises)
-- Small, single-file entrypoint with programmatic exports for testing
-- Case-insensitive extension matching
+- **Category Filtering**: Only organize the file types you care about using flags (e.g., `--code --images`).
+- Built-in help manual (`--help`) with dynamically generated valid categories.
+- Strict error handling (safely fails on typos or missing directories).
+- Uses safe filesystem operations (Node's fs/promises and C equivalents)
+- Small, standalone entrypoint available in both Node.js and C.
+- Case-insensitive extension matching.
 
 ## Installation
 
@@ -39,6 +42,22 @@ folderly
 folderly path/to/dir
 ```
 
+### Filtering by Category
+
+You can organize only specific types of files by passing their category names as flags. Any files that don't match the provided categories will be ignored.
+
+```bash
+folderly --code --images
+# or combine with a target path
+folderly path/to/dir --documents
+```
+
+To see the full list of valid category flags, run the built-in manual:
+
+```bash
+folderly --help
+```
+
 ### Example Output
 
 ```
@@ -58,6 +77,7 @@ Done! 5 moved, 0 failed
 
 - Only regular files are moved; subdirectories are left untouched.
 - Files with unknown extensions are moved to the `others` folder.
+- If an unrecognized flag is passed (e.g. `--documana`), the program will abort immediately to prevent partial execution.
 - The command uses `fs.rename()` so moves are fast but can fail across different mount points/filesystems.
 - No recursive scanning (only the specified directory level).
 
