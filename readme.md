@@ -81,6 +81,15 @@ Done! 5 moved, 0 failed
 - The command uses `fs.rename()` so moves are fast but can fail across different mount points/filesystems.
 - No recursive scanning (only the specified directory level).
 
+NB: Special handling for `.ts` files
+
+- `.ts` files are ambiguous (video container vs TypeScript source). To avoid misclassification, folderly implements a size-based rule:
+  - If a `.ts` file is larger than 1024 KB (1,048,576 bytes) it will be moved to the `videos` folder.
+  - If a `.ts` file is smaller than or equal to 1024 KB it will be moved to the `code` folder.
+  - If the program cannot stat the file to determine size it will fall back to the normal extension-based mapping.
+
+This behavior is intentional and documented so users understand why some `.ts` files may end up in `videos` instead of `code`.
+
 ## Contributing
 
 Contributions are welcome. Preferred workflow:

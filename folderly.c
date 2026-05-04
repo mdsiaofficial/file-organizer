@@ -597,6 +597,21 @@ int organize_directory(const char *target_dir, const char **allowed_categories, 
     const char *ext = get_extension(entry->d_name);
     const char *folder = find_folder(ext);
 
+    // Special rule for .ts files: decide by file size.
+    // If file > 1024 KB (1 MB) treat as video, otherwise treat as code.
+    if (ext && strcasecmp(ext, ".ts") == 0) {
+      struct stat size_stat;
+      if (stat(source_path, &size_stat) == 0) {
+        long long bytes = (long long)size_stat.st_size;
+        const long long threshold = 1024LL * 1024LL; // 1024 KB == 1,048,576 bytes
+        if (bytes > threshold) {
+          folder = "videos";
+        } else {
+          folder = "code";
+        }
+      }
+    }
+
     if (allowed_count > 0)
     {
       int allowed = 0;
