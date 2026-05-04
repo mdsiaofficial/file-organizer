@@ -392,7 +392,21 @@ async function organizeDirectory(targetDir) {
       continue;
     }
 
-    const folder = findFolder(getExtension(entry.name));
+    let folder = findFolder(getExtension(entry.name));
+
+    // Special rule for .ts files: decide by file size.
+    // If file > 1024 KB (1 MB) treat as video, otherwise treat as code.
+    const ext = getExtension(entry.name);
+    if (ext && ext.toLowerCase() === '.ts') {
+      try {
+        const st = await fs.stat(sourcePath);
+        const bytes = st.size;
+        const threshold = 1024 * 1024; // 1024 KB == 1,048,576 bytes
+        folder = bytes > threshold ? 'videos' : 'code';
+      } catch (err) {
+        // if stat fails, fall back to the default folder
+      }
+    }
     const folderPath = path.join(workDir, folder);
 
     try {
