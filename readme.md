@@ -52,11 +52,54 @@ folderly --code --images
 folderly path/to/dir --documents
 ```
 
+
+### Example Output
+
+```
+folderly test_foldercopy2/test_folder --code
+```
+
+```
+Folderly - Simple File Organizer
+Organizing files in: test_foldercopy2/test_folder
+Filtering for categories: code
+
+Moved: typescript.ts -> code/
+
+Done! 1 moved, 0 failed
+```
+
+
+
 To see the full list of valid category flags, run the built-in manual:
 
 ```bash
 folderly --help
 ```
+
+### Example Output
+
+```
+folderly — Simple File Organizer (CLI)
+
+Usage:
+  folderly [options] [target_directory]
+
+Arguments:
+  target_directory    The directory to organize (defaults to current directory ".")
+
+Options:
+  --help, -h          Show this help message
+  --<category>        Only organize files of this category (e.g., --code, --music)
+
+Valid Categories:
+  3d, archives, backups, certificates, code
+  configs, data, design, documents, fonts
+  images, logs, music, others, presentations
+  programs, spreadsheets, videos
+```
+
+## Lets Try:
 
 ### Example Output
 
