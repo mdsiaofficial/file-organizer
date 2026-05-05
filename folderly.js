@@ -292,10 +292,12 @@ const RULES = [
 ];
 
 const RULE_MAP = new Map();
+const VALID_CATEGORIES = new Set(['others']);
 for (const rule of RULES) {
   if (!RULE_MAP.has(rule.ext)) {
     RULE_MAP.set(rule.ext, rule.folder);
   }
+  VALID_CATEGORIES.add(rule.folder);
 }
 
 // Returns the extension, including the dot, or null when none exists.
@@ -356,13 +358,23 @@ async function ensureDir(dirPath, createdFolders) {
 
 // Scans the target directory and moves each regular file into a category.
 // Subdirectories are intentionally left untouched.
-async function organizeDirectory(targetDir) {
+async function organizeDirectory(targetDir, allowedCategories = null) {
   if (!targetDir) {
     throw new Error('Error: null directory path');
   }
 
   const workDir = path.resolve(trimTrailingSeparator(targetDir));
-  const entries = await fs.readdir(workDir, { withFileTypes: true });
+  
+  let entries;
+  try {
+    entries = await fs.readdir(workDir, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error(`Error: The target directory '${targetDir}' does not exist.`);
+    }
+    throw error;
+  }
+
   const createdFolders = new Set();
   let moved = 0;
   let failed = 0;
@@ -407,6 +419,11 @@ async function organizeDirectory(targetDir) {
         // if stat fails, fall back to the default folder
       }
     }
+
+    if (allowedCategories && !allowedCategories.has(folder)) {
+      continue;
+    }
+
     const folderPath = path.join(workDir, folder);
 
     try {
@@ -433,13 +450,67 @@ async function organizeDirectory(targetDir) {
   return { moved, failed };
 }
 
+function printHelp() {
+  console.log('folderly — Simple File Organizer (CLI)');
+  console.log('');
+  console.log('Usage:');
+  console.log('  folderly [options] [target_directory]');
+  console.log('');
+  console.log('Arguments:');
+  console.log('  target_directory    The directory to organize (defaults to current directory ".")');
+  console.log('');
+  console.log('Options:');
+  console.log('  --help, -h          Show this help message');
+  console.log('  --<category>        Only organize files of this category (e.g., --code, --music)');
+  console.log('');
+  console.log('Valid Categories:');
+  const categories = Array.from(VALID_CATEGORIES).sort();
+  for (let i = 0; i < categories.length; i += 5) {
+    console.log('  ' + categories.slice(i, i + 5).join(', '));
+  }
+}
+
 async function main(argv = process.argv) {
-  const target = argv[2] || '.';
+  const args = argv.slice(2);
+  
+  if (args.includes('--help') || args.includes('-h')) {
+    printHelp();
+    return;
+  }
+
+  let targetDir = null;
+  const flags = [];
+
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      flags.push(arg.slice(2).toLowerCase());
+    } else if (arg.startsWith('-')) {
+      flags.push(arg.slice(1).toLowerCase());
+    } else {
+      if (!targetDir) targetDir = arg;
+    }
+  }
+
+  targetDir = targetDir || '.';
+
+  if (flags.length > 0) {
+    const invalidFlags = flags.filter(f => !VALID_CATEGORIES.has(f));
+    if (invalidFlags.length > 0) {
+      console.error(`Error: Unknown category flag(s): ${invalidFlags.map(f => '--' + f).join(', ')}`);
+      console.error(`Run 'folderly --help' to see valid categories.`);
+      process.exitCode = 1;
+      return;
+    }
+  }
 
   console.log('Folderly - Simple File Organizer');
-  console.log(`Organizing files in: ${target}\n`);
+  console.log(`Organizing files in: ${targetDir}`);
+  if (flags.length > 0) {
+    console.log(`Filtering for categories: ${flags.join(', ')}`);
+  }
+  console.log('');
 
-  await organizeDirectory(target);
+  await organizeDirectory(targetDir, flags.length > 0 ? new Set(flags) : null);
 }
 
 if (require.main === module) {
@@ -452,6 +523,7 @@ if (require.main === module) {
 module.exports = {
   RULES,
   RULE_MAP,
+  VALID_CATEGORIES,
   getExtension,
   findFolder,
   organizeDirectory,
